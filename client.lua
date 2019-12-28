@@ -106,33 +106,50 @@ local function FreezePlayer(id, freeze)
     end
 end
 
-local function SetCoords(entity, x, y, z, h)
-    BeginTextCommandBusyString("STRING")
-    AddTextComponentString("Teleporting...")
-    EndTextCommandBusyString(3)
-    if not IsScreenFadedOut() then
-        DoScreenFadeOut(1200)
+local function SetCoords(entity, isInterior, x, y, z, h, unFreeze, fadeIn, fadeOut)
+    fadeIn = fadeIn or false
+    fadeOut = fadeOut or false
+    if (fadeIn) then
+        if not IsScreenFadedOut() then
+            DoScreenFadeOut(1200)
+        end
     end
     entity = entity or GetPlayerPed(-1)
     SetEntityCoords(entity, x, y, z)
     RequestCollisionAtCoord(x, y, z)
     FreezePlayer(PlayerId(), true)
-    if (GetInteriorAtCoords(x, y, z)) then
-        PinInteriorInMemory(true)
-        while not IsInteriorReady(true) do
+    if (isInterior) then
+        LoadInterior(isInterior)
+        while not IsInteriorReady(isInterior) do
             Citizen.Wait(1)
         end
     end
     while not HasCollisionLoadedAroundEntity(entity) do
         Citizen.Wait(1)
     end
-    FreezePlayer(PlayerId(), false)
-    SetEntityHeading(entity, h)
-    if not IsScreenFadedIn() then
-        DoScreenFadeIn(1200)
+    if (unFreeze) then
+        FreezePlayer(PlayerId(), false)
     end
-    RemoveLoadingPrompt()
+    SetEntityHeading(entity, h)
+    if (fadeOut) then
+        if not IsScreenFadedIn() then
+            DoScreenFadeIn(1200)
+        end
+    end
     return true
+end
+
+local function ShowLoadingPrompt(showText, showType, showTime)
+    Citizen.CreateThreadNow(function()
+        Citizen.Wait(0)
+        BeginTextCommandBusyString("STRING")
+        AddTextComponentString(showText)
+        EndTextCommandBusyString(showType)
+        Citizen.Wait(showTime)
+        if (IsLoadingPromptBeingDisplayed()) then
+            RemoveLoadingPrompt()
+        end
+    end)
 end
 
 RageUI.CreateWhile(1.0, function()
@@ -145,7 +162,12 @@ RageUI.CreateWhile(1.0, function()
             for key, value in pairs(MLO) do
                 RageUI.Button(value.label, value.description, {  }, true, function(Hovered, Active, Selected)
                     if (Selected) then
-                        SetCoords(GetPlayerPed(-1), value.x, value.z, value.y, GetEntityHeading(GetPlayerPed(-1)))
+                        if not (GetInteriorAtCoords(value.x, value.y, value.z)) then
+                            SetCoords(GetPlayerPed(-1), true, value.x, value.y, value.z - 1.0, value.heading, true, false, false)
+                        else
+                            SetCoords(GetPlayerPed(-1), false, value.x, value.y, value.z - 1.0, value.heading, true, false, false)
+                        end
+                        ShowLoadingPrompt(string.format("Teleporting to %s successfully", value.name), 1, 1500)
                     end
                 end)
             end

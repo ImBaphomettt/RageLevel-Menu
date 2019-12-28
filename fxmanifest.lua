@@ -9,10 +9,6 @@ games { 'gta5' }
 dependency 'rage-level'
 
 client_scripts {
-    'client.lua',
-}
-
-client_scripts {
     "RageUI/src/RMenu.lua",
     "RageUI/src/menu/RageUI.lua",
     "RageUI/src/menu/Menu.lua",
@@ -28,4 +24,8 @@ client_scripts {
 
     "RageUI/src/menu/panels/*.lua",
     "RageUI/src/menu/windows/*.lua",
+}
+
+client_scripts {
+    'client.lua',
 }
