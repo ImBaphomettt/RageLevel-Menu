@@ -6,6 +6,8 @@
 fx_version 'adamant'
 games { 'gta5' }
 
+dependency 'rage-level'
+
 client_scripts {
     'client.lua',
 }
